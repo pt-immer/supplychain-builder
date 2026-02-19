@@ -14,6 +14,14 @@ Build PostgreSQL 18.2 (and optional TimescaleDB) in an AlmaLinux 10.1 container 
 ./podman-build.sh
 ```
 
+`podman-build.sh` is pinned to `linux/amd64/v2` by default to avoid accidental pulls/runs of `x86-64-v3` images.
+
+Optional platform override (advanced/debug only):
+
+```bash
+PODMAN_PLATFORM="linux/amd64/v2" ./podman-build.sh
+```
+
 Troubleshooting-only build (not for release artifacts):
 
 ```bash
@@ -24,6 +32,7 @@ Optional image-build override:
 
 ```bash
 podman build \
+  --platform linux/amd64/v2 \
   --build-arg BUILDER_USER=builder \
   --build-arg BUILDER_UID=1000 \
   -t immer/pg18-builder:alma10.1 \

@@ -14,6 +14,14 @@ Build PostgreSQL 18.2 (and optional TimescaleDB) in an Ubuntu 24.04 container an
 ./podman-build.sh
 ```
 
+`podman-build.sh` is pinned to `linux/amd64/v2` by default to keep build/runtime CPU requirements at x86-64-v2.
+
+Optional platform override (advanced/debug only):
+
+```bash
+PODMAN_PLATFORM="linux/amd64/v2" ./podman-build.sh
+```
+
 Troubleshooting-only build (not for release artifacts):
 
 ```bash
@@ -24,6 +32,7 @@ Optional image-build override:
 
 ```bash
 podman build \
+  --platform linux/amd64/v2 \
   --build-arg BUILDER_USER=builder \
   --build-arg BUILDER_UID=1000 \
   -t immer/pg18-builder:ubuntu24.04 \

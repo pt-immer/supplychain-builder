@@ -5,6 +5,7 @@ trap 'echo "ERROR at line ${LINENO}" >&2' ERR
 IMAGE_NAME="${IMAGE_NAME:-immer/pg18-builder:ubuntu24.04}"
 OUT_DIR="${OUT_DIR:-./out}"
 PODMAN_VOLUME_LABEL="${PODMAN_VOLUME_LABEL:-:Z,U}"
+PODMAN_PLATFORM="${PODMAN_PLATFORM:-linux/amd64/v2}"
 mkdir -p "${OUT_DIR}"
 
 if [[ ! -w "${OUT_DIR}" ]]; then
@@ -18,10 +19,11 @@ if [[ ! -w "${OUT_DIR}" ]]; then
 fi
 
 echo "[1/3] Build builder image: ${IMAGE_NAME}"
-podman build -t "${IMAGE_NAME}" -f Containerfile .
+podman build --platform "${PODMAN_PLATFORM}" -t "${IMAGE_NAME}" -f Containerfile .
 
 echo "[2/3] Run builder container (outputs -> ${OUT_DIR})"
 podman run --rm \
+  --platform "${PODMAN_PLATFORM}" \
   --user "$(id -u):$(id -g)" \
   -v "${OUT_DIR}:/out${PODMAN_VOLUME_LABEL}" \
   -e PG_TAG="${PG_TAG:-REL_18_2}" \
