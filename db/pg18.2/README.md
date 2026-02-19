@@ -1,0 +1,129 @@
+# IMMER's PostgreSQL 18.2 (OLAP/OLGP)
+
+Build and package PostgreSQL 18.2 (with optional TimescaleDB) in distro-specific Podman builder images, then install on matching Linux targets.
+
+## Module Layout
+
+- `alma10.1/`: Build and installer flow for AlmaLinux/RHEL 10.x targets.
+- `ubuntu24.04/`: Build and installer flow for Ubuntu 24.04 targets.
+
+Each track contains:
+
+- `Containerfile`: builder image definition
+- `builder/build.sh`: PostgreSQL and TimescaleDB build script
+- `podman-build.sh`: local wrapper to build and run builder image
+- `installer/install-*.sh`: target host installer
+- `installer/verify.sh`: runtime linkage sanity check
+- `installer/postgresql18-immer.service`: systemd service unit
+
+## Supported Matrix
+
+- Host (build): Linux with Podman
+- Target (install):
+  - AlmaLinux/RHEL 10.x for `alma10.1`
+  - Ubuntu 24.04 for `ubuntu24.04`
+
+Use matching builder and installer track for each target OS.
+
+## Quick Start (Manual)
+
+### 1) Build artifact
+
+Example (Ubuntu track):
+
+```bash
+cd ubuntu24.04
+./podman-build.sh
+```
+
+Optional: override builder UID/user at image build time to match host policies:
+
+```bash
+podman build \
+  --build-arg BUILDER_USER=builder \
+  --build-arg BUILDER_UID=1000 \
+  -t immer/pg18-builder:ubuntu24.04 \
+  -f ubuntu24.04/Containerfile \
+  ubuntu24.04
+```
+
+Artifacts are written to `out/`:
+
+- `opt-pgsql-18.2-<branch>-<tag>.tgz`
+- `meta/postgres.version.txt`
+- `meta/pg_config.configure.txt`
+
+### 2) Install on target host
+
+Copy the artifact and installer files from `installer/` to target host, then run:
+
+```bash
+chmod +x install-*.sh
+ARCHIVE=./opt-pgsql-18.2-*.tgz ./install-*.sh
+systemctl start postgresql18-immer.service
+```
+
+### 3) Verify runtime linkage
+
+```bash
+./verify.sh
+```
+
+`verify.sh` should print no missing shared libraries and exit `0`.
+It checks runtime linkage for `postgres` and, when present, `llvmjit.so` and `timescaledb.so`.
+
+## Podman SELinux / Non-SELinux
+
+`podman-build.sh` supports configurable mount labeling via `PODMAN_VOLUME_LABEL`:
+
+- Default (SELinux hosts): `:Z`
+- Non-SELinux hosts: set it to an empty string
+
+Examples:
+
+```bash
+./podman-build.sh
+PODMAN_VOLUME_LABEL="" ./podman-build.sh
+```
+
+Mount format used by scripts:
+
+```bash
+-v "${OUT_DIR}:/out${PODMAN_VOLUME_LABEL}"
+```
+
+## Safety and Validation
+
+- Run installers as `root` on target hosts.
+- Use `shellcheck` on all shell scripts before merging changes.
+- Validate both tracks when changing common behavior.
+
+## Licensing
+
+- Repository files are licensed under MIT: see `LICENSE`.
+- Built artifacts include third-party components under their upstream licenses.
+- See `THIRD_PARTY_LICENSES.md` for dependency-chain licensing guidance.
+
+## Release Compliance Checklist
+
+Before publishing any binary artifact built with this repo:
+
+1. Record exact component versions/tags from build metadata in `out/meta/`.
+2. Collect upstream license/notice files for each included dependency version.
+3. Collect PostgreSQL `COPYRIGHT` and related notices from the checked out tag.
+4. Collect TimescaleDB license/notice files for the included modules and version.
+5. Bundle those notices with your release artifact package.
+6. Ensure release notes identify included third-party components and versions.
+7. Keep this repository's `LICENSE` included for repo-sourced scripts/docs.
+
+## Parity Checklist (No Automation Yet)
+
+When updating one distro track, review the paired file in the other track:
+
+- `*/Containerfile`
+- `*/podman-build.sh`
+- `*/builder/build.sh`
+- `*/installer/install-*.sh`
+- `*/installer/verify.sh`
+- `*/installer/postgresql18-immer.service`
+- `*/README.md`

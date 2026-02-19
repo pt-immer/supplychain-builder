@@ -1,0 +1,8 @@
+# Build artifacts
+**/out/
+**/stage/
+
+# Common local noise
+.DS_Store
+*.swp
+*.swo

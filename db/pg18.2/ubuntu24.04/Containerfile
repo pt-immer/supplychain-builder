@@ -1,0 +1,62 @@
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends \
+    bison \
+    bzip2 \
+    ca-certificates \
+    clang \
+    cmake \
+    flex \
+    g++ \
+    gcc \
+    gettext \
+    git \
+    gzip \
+    libcurl4-openssl-dev \
+    libicu-dev \
+    libkrb5-dev \
+    libldap2-dev \
+    liblz4-dev \
+    libnuma-dev \
+    libpam0g-dev \
+    libreadline-dev \
+    libselinux1-dev \
+    libsepol-dev \
+    libssl-dev \
+    libsystemd-dev \
+    liburing-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libzstd-dev \
+    lld \
+    llvm \
+    llvm-dev \
+    make \
+    perl \
+    pkg-config \
+    python3 \
+    tar \
+    uuid-dev \
+    xz-utils \
+    zlib1g-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+ARG BUILDER_USER=builder
+ARG BUILDER_UID=1000
+RUN if getent passwd "${BUILDER_UID}" >/dev/null; then \
+      existing_user="$(getent passwd "${BUILDER_UID}" | cut -d: -f1)"; \
+      if [ "${existing_user}" != "${BUILDER_USER}" ]; then \
+        useradd -m "${BUILDER_USER}"; \
+      fi; \
+    else \
+      useradd -m -u "${BUILDER_UID}" "${BUILDER_USER}"; \
+    fi
+RUN mkdir -p /work && chmod 0777 /work
+USER ${BUILDER_USER}
+WORKDIR /work
+
+COPY --chown=${BUILDER_USER}:${BUILDER_USER} builder/build.sh /work/build.sh
+RUN chmod +x /work/build.sh
+ENTRYPOINT ["/work/build.sh"]

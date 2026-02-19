@@ -1,0 +1,62 @@
+FROM almalinux:10.1
+
+# Build dependencies for PostgreSQL + TimescaleDB (RHEL/Alma 10).
+RUN dnf -y update \
+  && dnf -y --setopt=install_weak_deps=False install \
+    bison \
+    bzip2 \
+    ca-certificates \
+    clang \
+    cmake \
+    flex \
+    gcc \
+    gcc-c++ \
+    gettext \
+    git \
+    gzip \
+    krb5-devel \
+    libcurl-devel \
+    libicu-devel \
+    libselinux-devel \
+    libsepol-devel \
+    liburing-devel \
+    libuuid-devel \
+    libxml2-devel \
+    libxslt-devel \
+    llvm \
+    llvm-devel \
+    lld \
+    lz4-devel \
+    make \
+    numactl-devel \
+    openldap-devel \
+    openssl-devel \
+    pam-devel \
+    perl \
+    pkgconf-pkg-config \
+    python3 \
+    readline-devel \
+    systemd-devel \
+    tar \
+    xz \
+    zlib-devel \
+    libzstd-devel \
+  && dnf clean all
+
+ARG BUILDER_USER=builder
+ARG BUILDER_UID=1000
+RUN if getent passwd "${BUILDER_UID}" >/dev/null; then \
+      existing_user="$(getent passwd "${BUILDER_UID}" | cut -d: -f1)"; \
+      if [ "${existing_user}" != "${BUILDER_USER}" ]; then \
+        useradd -m "${BUILDER_USER}"; \
+      fi; \
+    else \
+      useradd -m -u "${BUILDER_UID}" "${BUILDER_USER}"; \
+    fi
+RUN mkdir -p /work && chmod 0777 /work
+USER ${BUILDER_USER}
+WORKDIR /work
+
+COPY --chown=${BUILDER_USER}:${BUILDER_USER} builder/build.sh /work/build.sh
+RUN chmod +x /work/build.sh
+ENTRYPOINT ["/work/build.sh"]
