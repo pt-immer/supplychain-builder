@@ -39,12 +39,13 @@ cd ubuntu24.04
 Optional: override builder UID/user at image build time to match host policies:
 
 ```bash
+cd ubuntu24.04
 podman build \
   --build-arg BUILDER_USER=builder \
   --build-arg BUILDER_UID=1000 \
   -t immer/pg18-builder:ubuntu24.04 \
-  -f ubuntu24.04/Containerfile \
-  ubuntu24.04
+  -f Containerfile \
+  .
 ```
 
 Artifacts are written to `out/`:
@@ -76,7 +77,7 @@ It checks runtime linkage for `postgres` and, when present, `llvmjit.so` and `ti
 
 `podman-build.sh` supports configurable mount labeling via `PODMAN_VOLUME_LABEL`:
 
-- Default (SELinux hosts): `:Z`
+- Default (SELinux hosts): `:Z,U`
 - Non-SELinux hosts: set it to an empty string
 
 Examples:
@@ -95,12 +96,13 @@ Mount format used by scripts:
 ## Safety and Validation
 
 - Run installers as `root` on target hosts.
+- `INSTALL_TIMESCALEDB=0` is a troubleshooting build mode and is not intended for release artifacts.
 - Use `shellcheck` on all shell scripts before merging changes.
 - Validate both tracks when changing common behavior.
 
 ## Licensing
 
-- Repository files are licensed under MIT: see `LICENSE`.
+- Repository files are licensed under MIT: see `../../LICENSE`.
 - Built artifacts include third-party components under their upstream licenses.
 - See `THIRD_PARTY_LICENSES.md` for dependency-chain licensing guidance.
 

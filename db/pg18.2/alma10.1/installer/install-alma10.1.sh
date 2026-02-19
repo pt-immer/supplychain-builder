@@ -10,23 +10,57 @@ SERVICE_NAME="${SERVICE_NAME:-postgresql18-immer.service}"
 ARCHIVE="${ARCHIVE:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+pick_archive() {
+  local -a candidates=()
+  mapfile -t candidates < <(
+    {
+      find . -maxdepth 1 -type f -name 'opt-pgsql-18.2-*.tgz' -printf '%T@ %p\n'
+      find "${SCRIPT_DIR}" -maxdepth 1 -type f -name 'opt-pgsql-18.2-*.tgz' -printf '%T@ %p\n'
+    } 2>/dev/null | sort -nr | awk '!seen[$2]++ {print $2}'
+  )
+
+  if [[ "${#candidates[@]}" -eq 0 ]]; then
+    return 1
+  fi
+
+  if [[ "${#candidates[@]}" -gt 1 ]]; then
+    echo "WARN: multiple artifacts found; auto-selecting newest: ${candidates[0]}"
+    echo "WARN: for reproducible installs, set ARCHIVE=/path/to/opt-pgsql-18.2-*.tgz"
+  fi
+
+  ARCHIVE="${candidates[0]}"
+}
+
 if [[ "${EUID}" -ne 0 ]]; then
   echo "ERROR: run as root."
   exit 1
 fi
 
 if [[ -z "${ARCHIVE}" ]]; then
-  ARCHIVE="$(find . -maxdepth 1 -type f -name 'opt-pgsql-18.2-*.tgz' -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR==1{print $2}')"
-  if [[ -z "${ARCHIVE}" ]]; then
-    ARCHIVE="$(find "${SCRIPT_DIR}" -maxdepth 1 -type f -name 'opt-pgsql-18.2-*.tgz' -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk 'NR==1{print $2}')"
-  fi
+  pick_archive || true
 fi
 if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
   echo "ERROR: cannot find artifact tgz. Set ARCHIVE=/path/to/opt-pgsql-18.2-*.tgz"
   exit 1
 fi
 
-echo "[1/9] Install runtime dependencies (AlmaLinux 10.1)..."
+echo "[1/10] Validate artifact archive safety..."
+if ! tar -tzf "${ARCHIVE}" >/dev/null 2>&1; then
+  echo "ERROR: archive is unreadable or invalid: ${ARCHIVE}"
+  exit 1
+fi
+if ! tar -tzf "${ARCHIVE}" | grep -qE '^(\./)?opt/pgsql/18\.2(/|$)'; then
+  echo "ERROR: archive does not contain expected opt/pgsql/18.2 payload: ${ARCHIVE}"
+  exit 1
+fi
+unsafe_paths="$(tar -tzf "${ARCHIVE}" | awk '($0 ~ /^\//) || ($0 ~ /(^|\/)\.\.(\/|$)/) { print; found=1 } END { if (!found) exit 1 }' || true)"
+if [[ -n "${unsafe_paths}" ]]; then
+  echo "ERROR: archive contains unsafe paths; refusing extraction to /"
+  echo "${unsafe_paths}" | head -n 10
+  exit 1
+fi
+
+echo "[2/10] Install runtime dependencies (AlmaLinux 10.1)..."
 dnf -y install \
   ca-certificates \
   openssl-libs \
@@ -49,11 +83,11 @@ dnf -y install \
   libuuid \
   util-linux
 
-echo "[2/9] Ensure postgres user/group exists..."
+echo "[3/10] Ensure postgres user/group exists..."
 getent group postgres >/dev/null || groupadd -r postgres
 id postgres >/dev/null 2>&1 || useradd -r -g postgres -d /var/lib/postgresql -m -s /sbin/nologin postgres
 
-echo "[3/9] Extract binaries into /opt (from: ${ARCHIVE})..."
+echo "[4/10] Extract binaries into /opt (from: ${ARCHIVE})..."
 mkdir -p /opt
 tar -xzf "${ARCHIVE}" -C /
 
@@ -62,26 +96,26 @@ if [[ ! -x "${PREFIX}/bin/postgres" ]]; then
   exit 1
 fi
 
-echo "[4/9] Ensure dynamic linker can find ${PREFIX}/lib (ldconfig)..."
+echo "[5/10] Ensure dynamic linker can find ${PREFIX}/lib (ldconfig)..."
 cat > /etc/ld.so.conf.d/pgsql-18.2.conf <<EOF
 ${PREFIX}/lib
 EOF
 ldconfig
 
-echo "[5/9] Install PATH helper..."
+echo "[6/10] Install PATH helper..."
 mkdir -p "${PROFILED_DIR}"
 cat > "${PROFILED_DIR}/pgsql-18.2.sh" <<'EOF'
 export PATH="/opt/pgsql/18.2/bin:${PATH}"
 EOF
 chmod 0644 "${PROFILED_DIR}/pgsql-18.2.sh"
 
-echo "[6/9] Create data + config directories..."
+echo "[7/10] Create data + config directories..."
 mkdir -p "$(dirname "${PGDATA}")" "${PGDATA}" "${ETC_DIR}"
 chown postgres:postgres "$(dirname "${PGDATA}")"
 chown -R postgres:postgres "${PGDATA}" "${ETC_DIR}"
 chmod 0700 "${PGDATA}"
 
-echo "[7/9] Initialize cluster if empty..."
+echo "[8/10] Initialize cluster if empty..."
 if [[ ! -f "${PGDATA}/PG_VERSION" ]]; then
   runuser -u postgres -- "${PREFIX}/bin/initdb" \
     --pgdata="${PGDATA}" \
@@ -89,7 +123,7 @@ if [[ ! -f "${PGDATA}/PG_VERSION" ]]; then
     --auth-host=scram-sha-256
 fi
 
-echo "[8/9] Move configs to ${ETC_DIR} and symlink back into PGDATA..."
+echo "[9/10] Move configs to ${ETC_DIR} and symlink back into PGDATA..."
 for f in postgresql.conf pg_hba.conf pg_ident.conf; do
   if [[ -f "${PGDATA}/${f}" && ! -L "${PGDATA}/${f}" ]]; then
     mv -f "${PGDATA}/${f}" "${ETC_DIR}/${f}"
@@ -98,7 +132,7 @@ for f in postgresql.conf pg_hba.conf pg_ident.conf; do
 done
 chown -R postgres:postgres "${ETC_DIR}"
 
-echo "[9/9] Install and enable systemd service..."
+echo "[10/10] Install and enable systemd service..."
 if [[ ! -f "${SCRIPT_DIR}/${SERVICE_NAME}" ]]; then
   echo "ERROR: missing service unit at ${SCRIPT_DIR}/${SERVICE_NAME}"
   exit 1

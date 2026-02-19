@@ -14,6 +14,12 @@ Build PostgreSQL 18.2 (and optional TimescaleDB) in an AlmaLinux 10.1 container 
 ./podman-build.sh
 ```
 
+Troubleshooting-only build (not for release artifacts):
+
+```bash
+INSTALL_TIMESCALEDB=0 ./podman-build.sh
+```
+
 Optional image-build override:
 
 ```bash
@@ -63,7 +69,7 @@ Expected result:
 
 `podman-build.sh` uses `PODMAN_VOLUME_LABEL` for mount labeling.
 
-- Default value: `:Z` (SELinux hosts)
+- Default value: `:Z,U` (SELinux hosts)
 - For non-SELinux hosts: set `PODMAN_VOLUME_LABEL=""`
 
 Examples:
@@ -81,6 +87,6 @@ Mount format:
 
 ## Licensing
 
-- Repository files: MIT (`../LICENSE`)
+- Repository files: MIT (`../../../LICENSE`)
 - Built artifacts: upstream component licenses apply
 - See `../THIRD_PARTY_LICENSES.md` before redistributing binaries
