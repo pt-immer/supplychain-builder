@@ -1,8 +1,8 @@
-FROM almalinux:10.1
+FROM almalinux/10-minimal
 
-# Build dependencies for PostgreSQL + TimescaleDB (RHEL/Alma 10).
-RUN dnf -y update \
-  && dnf -y --setopt=install_weak_deps=False install \
+# Build dependencies for PostgreSQL + TimescaleDB (AlmaLinux 10 minimal).
+RUN microdnf -y update \
+  && microdnf -y --setopt=install_weak_deps=1 install \
     bison \
     bzip2 \
     ca-certificates \
@@ -41,7 +41,7 @@ RUN dnf -y update \
     xz \
     zlib-devel \
     libzstd-devel \
-  && dnf clean all
+  && microdnf clean all
 
 ARG BUILDER_USER=builder
 ARG BUILDER_UID=1000

@@ -1,6 +1,6 @@
 # IMMER PostgreSQL 18.2 + TimescaleDB Builder (AlmaLinux 10.1)
 
-Build PostgreSQL 18.2 (and optional TimescaleDB) in an AlmaLinux 10.1 container and install on AlmaLinux/RHEL 10.x hosts.
+Build PostgreSQL 18.2 (and optional TimescaleDB) in an AlmaLinux 10.1 minimal container and install on AlmaLinux/RHEL 10.x hosts.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Build PostgreSQL 18.2 (and optional TimescaleDB) in an AlmaLinux 10.1 container 
 ./podman-build.sh
 ```
 
-`podman-build.sh` is pinned to `linux/amd64/v2` by default to avoid accidental pulls/runs of `x86-64-v3` images.
+`podman-build.sh` is pinned to `linux/amd64/v2` by default.
 
 Optional platform override (advanced/debug only):
 
