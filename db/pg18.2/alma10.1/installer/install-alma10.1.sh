@@ -49,7 +49,7 @@ if ! tar -tzf "${ARCHIVE}" >/dev/null 2>&1; then
   echo "ERROR: archive is unreadable or invalid: ${ARCHIVE}"
   exit 1
 fi
-if ! tar -tzf "${ARCHIVE}" | grep -qE '^(\./)?opt/pgsql/18\.2(/|$)'; then
+if ! tar -tzf "${ARCHIVE}" | grep -E '^(\./)?opt/pgsql/18\.2(/|$)' > /dev/null; then
   echo "ERROR: archive does not contain expected opt/pgsql/18.2 payload: ${ARCHIVE}"
   exit 1
 fi
@@ -78,6 +78,7 @@ dnf -y install \
   numactl-libs \
   pam \
   libselinux \
+  policycoreutils-python-utils \
   systemd-libs \
   liburing \
   libuuid \
@@ -131,6 +132,21 @@ for f in postgresql.conf pg_hba.conf pg_ident.conf; do
   fi
 done
 chown -R postgres:postgres "${ETC_DIR}"
+
+echo "[9.1/10] Reconcile SELinux contexts (when enforcing)..."
+if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
+  if command -v semanage >/dev/null 2>&1; then
+    semanage fcontext -a -t postgresql_db_t "${PGDATA}(/.*)?" 2>/dev/null \
+      || semanage fcontext -m -t postgresql_db_t "${PGDATA}(/.*)?"
+    semanage fcontext -a -t postgresql_etc_t "${ETC_DIR}(/.*)?" 2>/dev/null \
+      || semanage fcontext -m -t postgresql_etc_t "${ETC_DIR}(/.*)?"
+    restorecon -Rv "${PGDATA}" "${ETC_DIR}"
+  else
+    echo "WARN: SELinux enforcing but 'semanage' not found; skipping fcontext rules"
+  fi
+else
+  echo "[info] SELinux not enforcing; skipping fcontext/restorecon"
+fi
 
 echo "[10/10] Install and enable systemd service..."
 if [[ ! -f "${SCRIPT_DIR}/${SERVICE_NAME}" ]]; then

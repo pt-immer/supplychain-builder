@@ -49,7 +49,7 @@ if ! tar -tzf "${ARCHIVE}" >/dev/null 2>&1; then
   echo "ERROR: archive is unreadable or invalid: ${ARCHIVE}"
   exit 1
 fi
-if ! tar -tzf "${ARCHIVE}" | grep -qE '^(\./)?opt/pgsql/18\.2(/|$)'; then
+if ! tar -tzf "${ARCHIVE}" | grep -E '^(\./)?opt/pgsql/18\.2(/|$)' > /dev/null; then
   echo "ERROR: archive does not contain expected opt/pgsql/18.2 payload: ${ARCHIVE}"
   exit 1
 fi
@@ -74,7 +74,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y \
   liblz4-1 \
   libzstd1 \
   libcurl4 \
-  libldap-2.5-0 \
+  libldap2 \
   libkrb5-3 \
   libnuma1 \
   libpam0g \
