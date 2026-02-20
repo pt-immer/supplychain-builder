@@ -1,13 +1,12 @@
 # IMMER's PostgreSQL 18.2 (OLAP/OLGP)
 
-Build and package PostgreSQL 18.2 (with optional TimescaleDB) in distro-specific Podman builder images, then install on matching Linux targets.
+Build and package PostgreSQL 18.2 (with optional TimescaleDB) in a Podman builder image, then install on AlmaLinux/RHEL 10.x targets.
 
 ## Module Layout
 
 - `alma10.1/`: Build and installer flow for AlmaLinux/RHEL 10.x targets.
-- `ubuntu24.04/`: Build and installer flow for Ubuntu 24.04 targets.
 
-Each track contains:
+The track contains:
 
 - `Containerfile`: builder image definition
 - `builder/build.sh`: PostgreSQL and TimescaleDB build script
@@ -19,31 +18,29 @@ Each track contains:
 ## Supported Matrix
 
 - Host (build): Linux with Podman
-- Target (install):
-  - AlmaLinux/RHEL 10.x for `alma10.1`
-  - Ubuntu 24.04 for `ubuntu24.04`
+- Target (install): AlmaLinux/RHEL 10.x for `alma10.1`
 
-Use matching builder and installer track for each target OS.
+Use the `alma10.1` builder and installer track for supported target OSes.
 
 ## Quick Start (Manual)
 
 ### 1) Build artifact
 
-Example (Ubuntu track):
+Example:
 
 ```bash
-cd ubuntu24.04
+cd alma10.1
 ./podman-build.sh
 ```
 
 Optional: override builder UID/user at image build time to match host policies:
 
 ```bash
-cd ubuntu24.04
+cd alma10.1
 podman build \
   --build-arg BUILDER_USER=builder \
   --build-arg BUILDER_UID=1000 \
-  -t immer/pg18-builder:ubuntu24.04 \
+  -t immer/pg18-builder:alma10.1 \
   -f Containerfile \
   .
 ```
@@ -98,7 +95,6 @@ Mount format used by scripts:
 - Run installers as `root` on target hosts.
 - `INSTALL_TIMESCALEDB=0` is a troubleshooting build mode and is not intended for release artifacts.
 - Use `shellcheck` on all shell scripts before merging changes.
-- Validate both tracks when changing common behavior.
 
 ## Licensing
 
@@ -118,14 +114,14 @@ Before publishing any binary artifact built with this repo:
 6. Ensure release notes identify included third-party components and versions.
 7. Keep this repository's `LICENSE` included for repo-sourced scripts/docs.
 
-## Parity Checklist (No Automation Yet)
+## Track Checklist
 
-When updating one distro track, review the paired file in the other track:
+When updating this module, review:
 
-- `*/Containerfile`
-- `*/podman-build.sh`
-- `*/builder/build.sh`
-- `*/installer/install-*.sh`
-- `*/installer/verify.sh`
-- `*/installer/postgresql18-immer.service`
-- `*/README.md`
+- `alma10.1/Containerfile`
+- `alma10.1/podman-build.sh`
+- `alma10.1/builder/build.sh`
+- `alma10.1/installer/install-alma10.1.sh`
+- `alma10.1/installer/verify.sh`
+- `alma10.1/installer/postgresql18-immer.service`
+- `alma10.1/README.md`
