@@ -102,20 +102,24 @@ if [[ "${INSTALL_TIMESCALEDB}" == "1" ]]; then
   CMAKE_LINK_FLAGS="-flto=thin -fuse-ld=lld"
 
   ./bootstrap \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=clang \
-    -DCMAKE_CXX_COMPILER=clang++ \
-    -DCMAKE_C_FLAGS="${CMAKE_C_FLAGS}" \
-    -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS}" \
-    -DCMAKE_EXE_LINKER_FLAGS="${CMAKE_LINK_FLAGS}" \
-    -DCMAKE_SHARED_LINKER_FLAGS="${CMAKE_LINK_FLAGS}" \
-    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
-    -DREGRESS_CHECKS=OFF \
-    -DTAP_CHECKS=OFF
+    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_C_COMPILER=clang \
+    -D CMAKE_CXX_COMPILER=clang++ \
+    -D CMAKE_AR="$(which llvm-ar)" \
+    -D CMAKE_RANLIB="$(which llvm-ranlib)" \
+    -D CMAKE_NM="$(which llvm-nm)" \
+    -D CMAKE_C_FLAGS="${CMAKE_C_FLAGS}" \
+    -D CMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS}" \
+    -D CMAKE_EXE_LINKER_FLAGS="${CMAKE_LINK_FLAGS}" \
+    -D CMAKE_SHARED_LINKER_FLAGS="${CMAKE_LINK_FLAGS}" \
+    -D CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+    -D REGRESS_CHECKS=OFF \
+    -D TAP_CHECKS=OFF \
+    -D CMAKE_INSTALL_LIBDIR=lib
 
   cd build
   make -j"$(nproc)"
-  make install DESTDIR="${STAGE_DIR}"
+  make install
 else
   echo "[6.1/7] TimescaleDB: skipped (INSTALL_TIMESCALEDB=0)"
 fi
