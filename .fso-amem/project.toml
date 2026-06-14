@@ -1,0 +1,6 @@
+[project]
+name = "immer-supplychain-builder"
+slug = "immer-supplychain-builder"
+
+[amem]
+server = "https://amem.flusci.org"
