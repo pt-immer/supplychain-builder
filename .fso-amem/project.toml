@@ -4,3 +4,6 @@ slug = "immer-supplychain-builder"
 
 [amem]
 server = "https://amem.flusci.org"
+
+[client]
+manifest_version = 19
