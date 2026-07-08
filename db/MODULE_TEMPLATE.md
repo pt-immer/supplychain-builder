@@ -12,8 +12,8 @@ db/<module-name>/
   .editorconfig
   .gitignore
   <distro-or-target-1>/
-    Containerfile
-    podman-build.sh
+    Dockerfile
+    docker-build.sh
     builder/build.sh
     installer/
       install-<target>.sh
@@ -39,6 +39,7 @@ db/<module-name>/
 ## Naming conventions
 
 - Container images: `immer/<module>-builder:<target>`
+- Build driver: `docker-build.sh` (Docker; do not reintroduce Podman)
 - Service unit names: `<module>-<target>.service` (or documented equivalent)
 - Installer scripts: `install-<target>.sh`
 - Verification scripts: `verify.sh`

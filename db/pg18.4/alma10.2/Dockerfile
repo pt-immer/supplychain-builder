@@ -1,6 +1,7 @@
+# syntax=docker/dockerfile:1
 FROM almalinux/10-minimal
 
-# Build dependencies for PostgreSQL + TimescaleDB (AlmaLinux 10 minimal).
+# Build dependencies for PostgreSQL + TimescaleDB + pgvector (AlmaLinux 10 minimal).
 RUN microdnf -y update \
   && microdnf -y --setopt=install_weak_deps=0 install \
     bison \
@@ -43,20 +44,11 @@ RUN microdnf -y update \
     libzstd-devel \
   && microdnf clean all
 
-ARG BUILDER_USER=builder
-ARG BUILDER_UID=1000
-RUN if getent passwd "${BUILDER_UID}" >/dev/null; then \
-      existing_user="$(getent passwd "${BUILDER_UID}" | cut -d: -f1)"; \
-      if [ "${existing_user}" != "${BUILDER_USER}" ]; then \
-        useradd -m "${BUILDER_USER}"; \
-      fi; \
-    else \
-      useradd -m -u "${BUILDER_UID}" "${BUILDER_USER}"; \
-    fi
-RUN mkdir -p /work && chmod 0777 /work
-USER ${BUILDER_USER}
+# This is a throwaway builder image. It runs as root so build.sh can install into
+# the real ${PREFIX} (/opt/pgsql/...) before packaging a relocatable tarball.
+RUN mkdir -p /work /out
 WORKDIR /work
 
-COPY --chown=${BUILDER_USER}:${BUILDER_USER} builder/build.sh /work/build.sh
-RUN chmod +x /work/build.sh
-ENTRYPOINT ["/work/build.sh"]
+COPY builder/build.sh /usr/local/bin/build.sh
+RUN chmod +x /usr/local/bin/build.sh
+ENTRYPOINT ["/usr/local/bin/build.sh"]

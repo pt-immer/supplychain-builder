@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PREFIX="${PREFIX:-/opt/pgsql/18.2}"
+PREFIX="${PREFIX:-/opt/pgsql/18.4}"
 
 if [[ ! -x "${PREFIX}/bin/postgres" ]]; then
   echo "ERROR: ${PREFIX}/bin/postgres not found or not executable." >&2
@@ -9,10 +9,16 @@ fi
 
 echo "postgres: $("${PREFIX}/bin/postgres" --version)"
 echo
+
+# Source builds place extensions in pkglibdir (${PREFIX}/lib), not ${PREFIX}/lib/postgresql.
+# Resolve it from pg_config so the checks below actually match the installed layout.
+PKGLIB="$("${PREFIX}/bin/pg_config" --pkglibdir 2>/dev/null || echo "${PREFIX}/lib")"
+
 check_targets=(
   "${PREFIX}/bin/postgres"
-  "${PREFIX}/lib/postgresql/llvmjit.so"
-  "${PREFIX}/lib/postgresql/timescaledb.so"
+  "${PKGLIB}/llvmjit.so"
+  "${PKGLIB}/timescaledb.so"
+  "${PKGLIB}/vector.so"
 )
 
 echo "Missing libs (should be empty):"
