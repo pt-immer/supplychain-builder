@@ -7,7 +7,7 @@ This repository currently prioritizes manual, explicit build/install workflows o
 ## Development Guidelines
 
 - Keep changes minimal and distro-specific when required.
-- Keep the `alma10.1/` track accurate and up to date.
+- Keep the `alma10.2/` track accurate and up to date.
 - Document every behavior change in the relevant README.
 
 ## Shell Script Standards
@@ -20,5 +20,5 @@ This repository currently prioritizes manual, explicit build/install workflows o
 ## Validation Before PR
 
 - Lint changed scripts with `shellcheck`.
-- Run build + installer + verify manually for `alma10.1`.
+- Run build + installer + verify manually for `alma10.2`.
 - Confirm `installer/verify.sh` exits non-zero when dependencies are missing.

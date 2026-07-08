@@ -1,5 +1,5 @@
 [Unit]
-Description=PostgreSQL 18.2 (IMMER build)
+Description=PostgreSQL 18.4 (IMMER build)
 Documentation=man:postgres(1)
 After=network.target
 
@@ -8,7 +8,7 @@ Type=notify
 User=postgres
 Group=postgres
 Environment=PGDATA=/var/lib/pgsql/18/data
-ExecStart=/opt/pgsql/18.2/bin/postgres -D ${PGDATA}
+ExecStart=/opt/pgsql/18.4/bin/postgres -D ${PGDATA}
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -TERM $MAINPID
 Restart=on-failure

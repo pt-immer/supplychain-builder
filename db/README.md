@@ -4,11 +4,7 @@ Database modules.
 
 ## Modules
 
-- `pg18.2/`: PostgreSQL 18.2 + TimescaleDB builder and installer workflows.
-
-See module documentation:
-
-- `pg18.2/README.md`
+- `pg18.4/`: PostgreSQL 18.4 + TimescaleDB + pgvector builder and installer workflows.
 
 ## Add New Module
 

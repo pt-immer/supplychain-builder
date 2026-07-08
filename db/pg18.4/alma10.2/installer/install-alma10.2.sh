@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'echo "ERROR at line ${LINENO}" >&2' ERR
 
-PREFIX="${PREFIX:-/opt/pgsql/18.2}"
+PREFIX="${PREFIX:-/opt/pgsql/18.4}"
 PGDATA="${PGDATA:-/var/lib/pgsql/18/data}"
 ETC_DIR="${ETC_DIR:-/etc/pgsql/18}"
 PROFILED_DIR="${PROFILED_DIR:-/etc/profile.d}"
@@ -14,8 +14,8 @@ pick_archive() {
   local -a candidates=()
   mapfile -t candidates < <(
     {
-      find . -maxdepth 1 -type f -name 'opt-pgsql-18.2-*.tgz' -printf '%T@ %p\n'
-      find "${SCRIPT_DIR}" -maxdepth 1 -type f -name 'opt-pgsql-18.2-*.tgz' -printf '%T@ %p\n'
+      find . -maxdepth 1 -type f -name 'opt-pgsql-18.4-*.tgz' -printf '%T@ %p\n'
+      find "${SCRIPT_DIR}" -maxdepth 1 -type f -name 'opt-pgsql-18.4-*.tgz' -printf '%T@ %p\n'
     } 2>/dev/null | sort -nr | awk '!seen[$2]++ {print $2}'
   )
 
@@ -25,7 +25,7 @@ pick_archive() {
 
   if [[ "${#candidates[@]}" -gt 1 ]]; then
     echo "WARN: multiple artifacts found; auto-selecting newest: ${candidates[0]}"
-    echo "WARN: for reproducible installs, set ARCHIVE=/path/to/opt-pgsql-18.2-*.tgz"
+    echo "WARN: for reproducible installs, set ARCHIVE=/path/to/opt-pgsql-18.4-*.tgz"
   fi
 
   ARCHIVE="${candidates[0]}"
@@ -40,7 +40,7 @@ if [[ -z "${ARCHIVE}" ]]; then
   pick_archive || true
 fi
 if [[ -z "${ARCHIVE}" || ! -f "${ARCHIVE}" ]]; then
-  echo "ERROR: cannot find artifact tgz. Set ARCHIVE=/path/to/opt-pgsql-18.2-*.tgz"
+  echo "ERROR: cannot find artifact tgz. Set ARCHIVE=/path/to/opt-pgsql-18.4-*.tgz"
   exit 1
 fi
 
@@ -49,8 +49,8 @@ if ! tar -tzf "${ARCHIVE}" >/dev/null 2>&1; then
   echo "ERROR: archive is unreadable or invalid: ${ARCHIVE}"
   exit 1
 fi
-if ! tar -tzf "${ARCHIVE}" | grep -E '^(\./)?opt/pgsql/18\.2(/|$)' > /dev/null; then
-  echo "ERROR: archive does not contain expected opt/pgsql/18.2 payload: ${ARCHIVE}"
+if ! tar -tzf "${ARCHIVE}" | grep -E '^(\./)?opt/pgsql/18\.4(/|$)' > /dev/null; then
+  echo "ERROR: archive does not contain expected opt/pgsql/18.4 payload: ${ARCHIVE}"
   exit 1
 fi
 unsafe_paths="$(tar -tzf "${ARCHIVE}" | awk '($0 ~ /^\//) || ($0 ~ /(^|\/)\.\.(\/|$)/) { print; found=1 } END { if (!found) exit 1 }' || true)"
@@ -60,7 +60,7 @@ if [[ -n "${unsafe_paths}" ]]; then
   exit 1
 fi
 
-echo "[2/10] Install runtime dependencies (AlmaLinux 10.1)..."
+echo "[2/10] Install runtime dependencies (AlmaLinux 10.2)..."
 dnf -y install \
   ca-certificates \
   openssl-libs \
@@ -98,17 +98,17 @@ if [[ ! -x "${PREFIX}/bin/postgres" ]]; then
 fi
 
 echo "[5/10] Ensure dynamic linker can find ${PREFIX}/lib (ldconfig)..."
-cat > /etc/ld.so.conf.d/pgsql-18.2.conf <<EOF
+cat > /etc/ld.so.conf.d/pgsql-18.4.conf <<EOF
 ${PREFIX}/lib
 EOF
 ldconfig
 
 echo "[6/10] Install PATH helper..."
 mkdir -p "${PROFILED_DIR}"
-cat > "${PROFILED_DIR}/pgsql-18.2.sh" <<'EOF'
-export PATH="/opt/pgsql/18.2/bin:${PATH}"
+cat > "${PROFILED_DIR}/pgsql-18.4.sh" <<'EOF'
+export PATH="/opt/pgsql/18.4/bin:${PATH}"
 EOF
-chmod 0644 "${PROFILED_DIR}/pgsql-18.2.sh"
+chmod 0644 "${PROFILED_DIR}/pgsql-18.4.sh"
 
 echo "[7/10] Create data + config directories..."
 mkdir -p "$(dirname "${PGDATA}")" "${PGDATA}" "${ETC_DIR}"
